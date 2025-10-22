@@ -1,0 +1,186 @@
+---
+title: "Hypothesis 1"
+author: "Katie Warburton"
+format: html
+editor: visual
+execute:
+    code-fold: true
+    code-summary: "Show the code"
+---
+
+### Imports
+
+```{r message=FALSE, warning=FALSE, results='hide'}
+library(stringr) 
+library(tidyverse) 
+library(dplyr) 
+library(nnet)
+library(ggplot2) 
+library(lmtest) 
+library(brms) 
+library(tidybayes) 
+library(parameters) 
+library(mclogit) 
+
+set.seed(13)
+
+```
+
+### Data
+
+```{r}
+df <- read.csv('Results/level2_trial_data.csv',  na.strings=c("","NA"))  
+items <- sprintf("I%02d", 9:23)
+```
+
+## Hypothesis 1a
+
+Order affects the assignment of items to categories A, B, X
+
+```{r}
+df_1a <- df[df$ORDER != 'a',]
+
+table(df_1a$LOC)
+
+long_1a <- df_1a %>% pivot_longer(cols=items, 
+                                  values_to = 'CAT') %>% 
+  drop_na() %>% 
+  select(all_of(c('P_ID', 'DEPTH', 'LOC', 'ORDER', 'CAT', 'STIMULI', 'POOL')))
+
+long_1a$CAT <- as.factor(long_1a$CAT)
+
+```
+
+### Left
+
+```{r}
+df_L <- long_1a[long_1a$LOC == 'L',]
+```
+
+```{r}
+lm_1.1 <- mblogit(
+   formula = CAT ~ 1 + ORDER + POOL,
+   random = list(~1|STIMULI),
+   control = mmclogit.control(inner.optimizer = "BFGS"),
+   data = df_L)
+
+lm_1 <- mblogit(
+   formula = CAT ~ 1 + ORDER,
+   random = list(~1|STIMULI),
+   control = mmclogit.control(inner.optimizer = "BFGS"),
+   data = df_L)
+
+anova(lm_1, lm_1.1, test = 'Chisq')
+```
+
+```{r}
+lm_0 <- mblogit(
+   formula = CAT ~ 1,
+   random = list( ~1|STIMULI),
+    control = mmclogit.control(inner.optimizer = "BFGS"),
+   data = df_L)
+
+l_anova <- anova(lm_0, lm_1, test='Chisq')
+l_anova
+```
+
+### Centered
+
+```{r}
+df_C <- long_1a[long_1a$LOC == 'C',]
+```
+
+```{r}
+cm_1 <- mblogit(
+   formula = CAT ~ 1 + ORDER,
+   random = list(~1|STIMULI),
+   control = mmclogit.control(inner.optimizer = "BFGS"),
+   data = df_C)
+
+
+cm_1.1 <- mblogit(
+   formula = CAT ~ 1 + ORDER + POOL,
+   random = list( ~1|STIMULI),
+   control = mmclogit.control(inner.optimizer = "BFGS"),
+   data = df_C)
+
+anova(cm_1, cm_1.1, test = "Chisq")
+```
+
+```{r}
+cm_0 <- mblogit(
+   formula = CAT ~ 1,
+   random = list(~1|STIMULI),
+   control = mmclogit.control(inner.optimizer = "BFGS"),
+   data = df_C)
+
+anova(cm_0, cm_1, test='Chisq')
+```
+
+### Right 
+
+```{r}
+df_R <- long_1a[long_1a$LOC == 'R',]
+```
+
+```{r}
+rm_1 <- mblogit(
+   formula = CAT ~ 1 + ORDER,
+   random = list(~1|STIMULI), 
+   control = mmclogit.control(inner.optimizer = "BFGS"),
+   data = df_R)
+
+rm_1.1 <- mblogit(
+   formula = CAT ~ 1 + ORDER + POOL,
+   random = list(~1|STIMULI), 
+   control = mmclogit.control(inner.optimizer = "BFGS"),
+   data = df_R)
+
+anova(rm_1, rm_1.1, test = "Chisq")
+```
+
+```{r}
+
+rm_0 <- mblogit(
+   formula = CAT ~ 1,
+   random = list( ~1|STIMULI),
+    control = mmclogit.control(inner.optimizer = "BFGS"),
+   data = df_R)
+
+anova(rm_0, rm_1, test = "Chisq")
+```
+
+### Overall
+
+```{r}
+m_1 <- mblogit(
+   formula = CAT ~ 1 + ORDER,
+   random = list(~1|STIMULI, ~1|LOC), 
+   control = mmclogit.control(inner.optimizer = "BFGS"),
+   data = long_1a)
+
+m_1.1 <- mblogit(
+   formula = CAT ~ 1 + ORDER + POOL,
+   random = list( ~1|STIMULI,  ~1|LOC),
+    control = mmclogit.control(inner.optimizer = "BFGS"),
+   data = long_1a)
+
+m_1.2 <- mblogit(
+   formula = CAT ~ 1 + ORDER,
+   random = list( ~1|STIMULI),
+   control = mmclogit.control(inner.optimizer = "BFGS"),
+   data = long_1a)
+
+anova(m_1, m_1.1, test='Chisq')
+anova(m_1.2, m_1, test='Chisq')
+```
+
+```{r}
+m_0 <- mblogit(
+   formula = CAT ~ 1,
+   random = list(~1|STIMULI, ~1|LOC), 
+   control = mmclogit.control(inner.optimizer = "BFGS"),
+   data = long_1a)
+
+anova(m_0, m_1, test = "Chisq")
+```

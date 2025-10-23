@@ -106,7 +106,7 @@ def generate_summary_AXB_plot(df, column, colVals, names, figsize=(6.25, 2.15), 
                 yerr = sem[sem[column] == val][['PROP_A', 'PROP_X', 'PROP_B']].values[0]
                 ax.text(-0.45, 0.92, f"T = {counts[counts[column] == val]['PROP_A'].iloc[0]}", size=8)
                 ax.set_title(f'{names[i]}', fontsize=12)
-            ax.bar(x, y, color=['#D81B60', '#1E88E5', '#FFC107'], edgecolor='black', yerr=yerr, capsize=3)
+            ax.bar(x, y, color=['#D81B60', '#1E88E5', '#FFC107'], edgecolor='black', width=0.75, linewidth=0.5)#, yerr=yerr, capsize=3)
             ax.set_xticks(['A', 'X', 'B'])
             if i == 0:
                 ax.set_yticks([0.0, 0.5, 1.0])

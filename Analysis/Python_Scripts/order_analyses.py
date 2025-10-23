@@ -53,6 +53,16 @@ def get_seq_data(df, locs, orders):
     long_df = pd.concat(long_by_loc)
     return seq_df.reset_index().drop('index', axis=1), long_df.reset_index().drop('index', axis=1)
 
+def jsd_no_nan(dist1, dist2):
+    with np.errstate(invalid='ignore'):
+        dist = distance.jensenshannon(dist1, dist2)
+        if np.isnan(dist):
+            dist = 0.0
+    return dist
+
+
+
+
 def get_jsds(df, loc):
     df_at_loc = df[df['LOC'] == loc]
     dist_a = np.array(df_at_loc[df_at_loc['ORDER'] == 'a'][['PROP_A', 'PROP_X', 'PROP_B']].mean().values)
@@ -60,7 +70,33 @@ def get_jsds(df, loc):
     dist_m = np.array(df_at_loc[df_at_loc['ORDER'] == 'm'][['PROP_A', 'PROP_X', 'PROP_B']].mean().values)
     dist_b = np.array(df_at_loc[df_at_loc['ORDER'] == 'b'][['PROP_A', 'PROP_X', 'PROP_B']].mean().values)
 
-    jsd_f = distance.jensenshannon(dist_f, dist_a)
-    jsd_m = distance.jensenshannon(dist_m, dist_a)
-    jsd_b = distance.jensenshannon(dist_b, dist_a)
+    jsd_f = jsd_no_nan(dist_f, dist_a)
+    jsd_m = jsd_no_nan(dist_m, dist_a)
+    jsd_b = jsd_no_nan(dist_b, dist_a)
     return jsd_f, jsd_m, jsd_b
+
+def perm_test(df, loc, it):
+    test_df = copy.deepcopy(df)
+    test_df = test_df[test_df['LOC'] == loc]
+    jsd_f, jsd_m, jsd_b = get_jsds(df, loc)
+    if loc == 'L':
+        diff1 = jsd_b - jsd_f
+        diff2 = jsd_b - jsd_m
+    elif loc == 'R':
+        diff1 = jsd_f - jsd_b
+        diff2 = jsd_f - jsd_m
+    p1, p2 = 0, 0
+    for _ in range(it):
+        test_df['ORDER'] = test_df['ORDER'].sample(frac=1, random_state=13).values
+        jsd_f, jsd_m, jsd_b = get_jsds(test_df, loc)
+        if loc == 'L':
+            temp_diff1 = jsd_b - jsd_f
+            temp_diff2 = jsd_b - jsd_m
+        elif loc == 'R':
+            temp_diff1 = jsd_f - jsd_b
+            temp_diff2 = jsd_f - jsd_m
+        if temp_diff1 >= diff1:
+            p1 += 1
+        if temp_diff2 >= diff2:
+            p2 += 1
+    return p1/it, p2/it

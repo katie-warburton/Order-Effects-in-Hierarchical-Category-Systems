@@ -73,8 +73,6 @@ def get_jsds(df, loc):
     return jsd_f, jsd_m, jsd_b
 
 def perm_test(df, loc, it):
-    test_df = copy.deepcopy(df)
-    test_df = test_df[test_df['LOC'] == loc]
     jsd_f, jsd_m, jsd_b = get_jsds(df, loc)
     if loc == 'L':
         diff1 = jsd_b - jsd_f
@@ -82,9 +80,13 @@ def perm_test(df, loc, it):
     elif loc == 'R':
         diff1 = jsd_f - jsd_b
         diff2 = jsd_f - jsd_m
+    seq_df = copy.deepcopy(df)
+    seq_df = seq_df[(seq_df['LOC'] == loc) & (seq_df['ORDER'] != 'a')].reset_index()
     p1, p2 = 0, 0
     for _ in range(it):
-        test_df['ORDER'] = test_df['ORDER'].sample(frac=1, random_state=13).values
+        seq_df['ORDER'] = seq_df['ORDER'].sample(frac=1, random_state=13).values
+        all_at_once = df[df['ORDER'] == 'a']
+        test_df = pd.concat([seq_df, all_at_once])
         jsd_f, jsd_m, jsd_b = get_jsds(test_df, loc)
         if loc == 'L':
             temp_diff1 = jsd_b - jsd_f

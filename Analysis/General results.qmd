@@ -79,15 +79,3 @@ round(cramerV(cat_by_set), 2)
 
 chisq.test(cat_by_set)$stdre
 ```
-
-```{r}
-order_stim <- table(df_long$ORDER, df_long$STIMULI)
-order_stim
-
-t_stim <- chisq.test(order_stim)
-t_stim
-
-cramerV(order_stim)
-
-t_stim$stdre
-```

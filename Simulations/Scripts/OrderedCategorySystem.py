@@ -7,7 +7,6 @@ import copy
 import random
 import numpy as np
 from collections import defaultdict
-
 class Category:
     def __init__(self, label, depth=0, parent=None):
         self.label = label
@@ -71,19 +70,30 @@ class CategorySystem:
             json_data = json.load(f)
         return self.parse_cats(json_data)
     
+
+# make better labelling to speed things up!!!!!!
+def get_label(node):
+    if len(node.children) == 0:
+        return (node.label, tuple(node.item_idxs))
+    
+    return (node.label, tuple(
+        get_label(child)
+        for child in node.children
+    ))
+
 def ordered_CKMM(node, D, treeLookup=None):
     if treeLookup is None:
         treeLookup = defaultdict(lambda: None)
-    label_key = tuple(sorted(node.item_idxs))
-    if treeLookup[label_key] is not None:
-        return treeLookup[label_key]
+    label_key = get_label(node)
+    cached = treeLookup[label_key]
+    if cached is not None:
+        return cached
     children = node.children
     k = len(children)
     if k == 0:
         score = 0
     elif k == 1:
-        child = children[0]
-        score = ordered_CKMM(child, D, treeLookup)
+        score = ordered_CKMM(children[0], D, treeLookup)
     elif k == 2:
         A, B = children
         a_score = ordered_CKMM(A, D, treeLookup)
@@ -118,10 +128,13 @@ def ordered_CKMM(node, D, treeLookup=None):
     treeLookup[label_key] = score
     return score 
             
-def greedy_categorizer(best_syst, item_seq, D):
+def greedy_categorizer(best_syst, item_seq, D, treeLookup = None):
+    random.seed(13)
     cat_choices = {}
+    if treeLookup is None:
+        treeLookup = defaultdict(lambda: None)
     for item in item_seq:
-        high_score = 0
+        high_score = float('-inf')
         syst = best_syst
         potential_systs = []
         best_cat = []
@@ -133,7 +146,7 @@ def greedy_categorizer(best_syst, item_seq, D):
             if not cat.visible:
                 cat.visible = True
                 test_syst.num_nodes += 1
-            score = ordered_CKMM(test_syst.root, D)
+            score = ordered_CKMM(test_syst.root, D, treeLookup)
             if score > high_score: 
                 high_score = score
                 potential_systs = [test_syst]
@@ -151,8 +164,11 @@ def softmax(x, temp):
     x = x - np.max(x)
     return np.exp(x) / np.sum(np.exp(x))
 
-def greedy_categorizer_softmax(best_syst, item_seq, D, temp):
+def greedy_categorizer_softmax(best_syst, item_seq, D, treeLookup=None, temp=1):
+    random.seed(13)
     cat_choices = {}
+    if treeLookup is None:
+        treeLookup = defaultdict(lambda: None)
     for item in item_seq:
         syst = best_syst
         potential_systs = []
@@ -166,7 +182,7 @@ def greedy_categorizer_softmax(best_syst, item_seq, D, temp):
             if not cat.visible:
                 cat.visible = True
                 test_syst.num_nodes += 1
-            sys_scores.append(ordered_CKMM(test_syst.root, D))
+            sys_scores.append(ordered_CKMM(test_syst.root, D, treeLookup))
             potential_systs.append(test_syst)
             cats.append(cat.label)
         prob_dist = softmax(np.array(sys_scores), temp)
@@ -175,16 +191,42 @@ def greedy_categorizer_softmax(best_syst, item_seq, D, temp):
         cat_choices[item] = cats[best_idx]
     return best_syst, cat_choices
 
+def model_likelihood(syst, category_choices, item_seq, D, treeLookup=None, temp=1):
+    log_like = 0.0
+    if treeLookup is None:
+        treeLookup = defaultdict(lambda: None)
+    for item in item_seq:
+        sys_scores = []
+        potential_systs  = []
+        cats  = []
+        current_syst = syst
+        for i in range(len(current_syst.can_add)):
+            test_syst = copy.deepcopy(current_syst)
+            cat = test_syst.can_add[i]
+            cat.add_item(item, syst.item_hash[item])
+            test_syst.num_items += 1
+            if not cat.visible:
+                cat.visible = True
+                test_syst.num_nodes += 1
+            sys_scores.append(ordered_CKMM(test_syst.root, D, treeLookup))
+            potential_systs.append(test_syst)
+            cats.append(cat.label)
+        prob_dist = softmax(np.array(sys_scores), temp)
+        choice = category_choices[f'I{item:02}']
+        choice_idx = cats.index(choice)
+        log_prob = np.log(prob_dist[choice_idx])
+        log_like += log_prob
+        syst = potential_systs[choice_idx]
+    return log_like
+
 def get_closest_dist(best_syst, cat_idx, item, D):
     new_idx = best_syst.item_hash[item]
     prev_cat = best_syst.can_add[cat_idx]
     cat_items_idx = D[prev_cat.item_idxs, new_idx]
-    # could be mean of category or closest in category -- 
     return np.min(cat_items_idx)
 
-
-
 def get_distance_mat(items, min_it=None, max_it=None, noise=0):
+    random.seed(13)
     item_hash = {lab+1: lab for lab in range(len(items))}
     if min_it is None:
         min_it = np.min(items)

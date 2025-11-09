@@ -31,7 +31,7 @@ def get_seq_df(df, items, loc, orders):
        item_subset = left_df[left_df['ORDER'] == lab]
        same_as_first = item_subset[[first] + other].apply(lambda x: x[other] == x[first], axis=1)*1
        same_as_first['PROP_SAME'] = same_as_first[other].sum(axis=1) / 8
-       subseq_df = pd.concat([item_subset[['P_ID', 'STIMULI', 'POOL', 'DEPTH', 'LOC', 'ORDER']], item_subset[first], same_as_first], axis=1)
+       subseq_df = pd.concat([item_subset[['P_ID','POOL', 'DEPTH', 'LOC', 'ORDER']], item_subset[first], same_as_first], axis=1)
        subseq_df.rename(columns={first: 'FIRST'}, inplace=True)
        subseq_df.rename(columns={other[i] : f'OTH_{i+1}' for i in range(len(other))}, inplace=True)
        seq_dfs.append(subseq_df)

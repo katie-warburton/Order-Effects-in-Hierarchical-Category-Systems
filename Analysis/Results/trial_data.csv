@@ -875,7 +875,7 @@ r062,3,C,b,,,,BY,BY,BY,BY,BY,BY,BY,BY,BA,,,,AB,AB,BB,BB,0,4,rep
 r062,3,R,m,,,,,,,AB,AY,AY,XY,XY,XY,BA,BA,BA,AA,AA,BA,BB,0,1,rep
 r062,2,L,f,A,X,X,X,X,X,X,X,X,,,,,,,A,A,B,B,0,2,rep
 r062,2,R,a,,,,,,,X,X,X,X,X,X,X,X,X,A,A,B,B,0,3,rep
-r063,2,R,f,,,,,,,A,A,A,A,A,A,A,B,,A,A,B,B,0,4,rep
+r063,2,R,f,,,,,,,A,A,A,A,A,A,A,B,B,A,A,B,B,0,4,rep
 r063,3,R,a,,,,,,,XY,XY,XY,XY,BA,BA,BA,BA,BA,AA,AA,BB,BB,0,3,rep
 r063,3,L,b,BB,AA,AB,AB,XY,XY,AB,AB,XY,,,,,,,AA,AA,AB,BB,1,1,rep
 r063,2,C,m,,,,X,X,B,B,B,B,B,A,B,,,,A,A,B,B,0,2,rep

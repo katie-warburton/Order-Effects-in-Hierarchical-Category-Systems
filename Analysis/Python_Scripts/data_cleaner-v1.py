@@ -50,10 +50,30 @@ def check_distractors(cat_choices):
         incorrect += 1
     return incorrect
 
+def find_in_tree(cat, item):
+    if len(cat['children']) > 0:
+        for child in cat['children']:
+            label = find_in_tree(child, item)
+            if label is not None:
+                return label
+    elif len(cat['items']) > 0:
+        if float(item) in cat['items']:
+            return cat['name']
+    return None
+
+def get_missing_label(trial_row, final_tree):
+    items = [it for it, cat in trial_row.items() if cat is None]
+    for it in items:
+        label = find_in_tree(final_tree, it)
+        trial_row[it] = label
+    return trial_row
+
 def extract_dfs(exp_data):
     trial_data = []
     participant_data = []
     for pid, trials in exp_data.items():
+        if trials[0]['age'] < 18:
+            continue
         total_errors = 0
         if pid[0] == 'p':
             pool = 'prolific'
@@ -64,6 +84,8 @@ def extract_dfs(exp_data):
             if tr['part'] == 'experiment':
                 d, l, o = list(tr['condition'])
                 trial_row = tr['category_choices']
+                if None in trial_row.values():
+                    trial_row = get_missing_label(trial_row, tr['final_tree'])
                 errors = check_distractors(trial_row)
                 trial_row['P_ID'] = pid
                 trial_row['DEPTH'] = d
@@ -83,14 +105,13 @@ def extract_dfs(exp_data):
         participant_data.append(participant_row)
     # make and save participant data frame
     participant_data = pd.DataFrame.from_dict(participant_data)
-    participant_data.to_csv('Order Effects/Analysis/Results/participant_data.csv', index=None)
+    participant_data.to_csv('Analysis/Results/participant_data.csv', index=None)
     # make an save trial data in a data frame
     trial_data = pd.DataFrame.from_dict(trial_data)
     trial_data = trial_data[['P_ID', 'DEPTH', 'LOC', 'ORDER'] + [f'{i}' for i in range(9, 24)] + DISTRACTORS + ['ERRORS', 'STIMULI', 'POOL']]
     trial_data.rename(columns={f'{i}':f'I{i:02}' for i in range(9, 24)}, inplace=True)
     trial_data.rename(columns={'1': 'I01', '3.01': 'I03', '29.01': 'I29', '31': 'I31'}, inplace=True)
-    trial_data.to_csv('Order Effects/Analysis/Results/trial_data.csv', index=None)
-    #TO DO: make and save reaction time data frame (for potential future interest -- not current project)
+    trial_data.to_csv('Analysis/Results/trial_data.csv', index=None)
 
 def remove_duplicates(data):
     seen = set()
@@ -125,4 +146,4 @@ def main(filepath, specific_ids=[]):
     rep = get_experimental_trials(rep, 'r')
     extract_dfs(prolific | rep)   
 
-main('Order Effects/Analysis/Results/results-98863bd139ec98cf6bc52549beaaf679-2025-09-24-02-06-06.json', ['bdd4194403da271bff66e4e237429bdd'])
+main('Analysis/Results/results-98863bd139ec98cf6bc52549beaaf679-2025-09-24-02-06-06.json', ['bdd4194403da271bff66e4e237429bdd'])

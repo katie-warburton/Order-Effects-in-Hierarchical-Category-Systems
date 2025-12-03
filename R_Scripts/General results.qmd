@@ -14,14 +14,12 @@ library(mclogit)
 library("rcompanion")
 
 set.seed(13)
-
-
 ```
 
 ### Data
 
 ```{r}
-df <- read.csv('Results/level2_trial_data.csv',  na.strings=c("","NA"))  
+df <- read.csv('../Results/level2_trial_data.csv',  na.strings=c("","NA"))  
 
 items <- sprintf("I%02d", 9:23)
 

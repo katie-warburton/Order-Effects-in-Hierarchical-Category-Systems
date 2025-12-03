@@ -24,7 +24,7 @@ set.seed(13)
 ### Data
 
 ```{r}
-df <- read.csv('Results/hyp2_df_long.csv',  na.strings=c("","NA"))  
+df <- read.csv('../Results/hyp2_df_long.csv',  na.strings=c("","NA"))  
 ```
 
 ### Hypothesis

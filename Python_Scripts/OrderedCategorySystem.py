@@ -52,6 +52,7 @@ class CategorySystem:
             self.num_nodes += 1
         if len(json_cat['children']) == 0:
             self.can_add.append(cat)
+            json_cat['items'].sort() # I assumed sorted, but just in case, because treating it as an ordered category system
             for item in json_cat['items']:
                 cat.item_idxs.append(self.item_hash[item])
                 item_cat = Category(item, cat.depth+1, self)

@@ -1,8 +1,12 @@
 import json
 import argparse
 import pandas as pd
+import OrderedCategorySystem as OCS
 
 DISTRACTORS = ['1', '3.01', '29.01', '31']
+D, ITEM_HASH = OCS.get_distance_mat([i for i in range(1, 32)])
+ITEM_HASH[3.01] = 2
+ITEM_HASH[29.01] = 28
 
 def get_demographics(trial):
     demo = {'part': 'demographics'}
@@ -92,9 +96,14 @@ def extract_dfs(exp_data):
                 trial_row['LOC'] = l
                 trial_row['ORDER'] = o.lower()
                 trial_row['STIMULI'] = tr['stimuli'][-1]
-                trial_data.append(trial_row)
                 trial_row['ERRORS'] = errors
                 trial_row['POOL'] = pool
+                
+                tree = OCS.CategorySystem(ITEM_HASH)
+                tree.root = tree.parse_cats(tr['final_tree'])
+                score = OCS.ordered_CKMM(tree.root, D)
+                trial_row['SCORE'] = score
+                trial_data.append(trial_row)
                 total_errors += errors
         participant_row['GENDER'] = trials[0]['gender']
         participant_row['AGE'] = trials[0]['age']
@@ -105,13 +114,13 @@ def extract_dfs(exp_data):
         participant_data.append(participant_row)
     # make and save participant data frame
     participant_data = pd.DataFrame.from_dict(participant_data)
-    participant_data.to_csv('Analysis/Results/participant_data.csv', index=None)
+    participant_data.to_csv('Results/participant_data.csv', index=None)
     # make an save trial data in a data frame
     trial_data = pd.DataFrame.from_dict(trial_data)
-    trial_data = trial_data[['P_ID', 'DEPTH', 'LOC', 'ORDER'] + [f'{i}' for i in range(9, 24)] + DISTRACTORS + ['ERRORS', 'STIMULI', 'POOL']]
+    trial_data = trial_data[['P_ID', 'DEPTH', 'LOC', 'ORDER'] + [f'{i}' for i in range(9, 24)] + DISTRACTORS + ['ERRORS', 'STIMULI', 'POOL', 'SCORE']]
     trial_data.rename(columns={f'{i}':f'I{i:02}' for i in range(9, 24)}, inplace=True)
     trial_data.rename(columns={'1': 'I01', '3.01': 'I03', '29.01': 'I29', '31': 'I31'}, inplace=True)
-    trial_data.to_csv('Analysis/Results/trial_data.csv', index=None)
+    trial_data.to_csv('Results/trial_data.csv', index=None)
 
 def remove_duplicates(data):
     seen = set()
@@ -146,4 +155,4 @@ def main(filepath, specific_ids=[]):
     rep = get_experimental_trials(rep, 'r')
     extract_dfs(prolific | rep)   
 
-main('Analysis/Results/results-98863bd139ec98cf6bc52549beaaf679-2025-09-24-02-06-06.json', ['bdd4194403da271bff66e4e237429bdd'])
+main('Results/results-98863bd139ec98cf6bc52549beaaf679-2025-09-24-02-06-06.json', ['bdd4194403da271bff66e4e237429bdd'])

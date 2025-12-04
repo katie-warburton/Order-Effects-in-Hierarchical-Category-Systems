@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 from scipy.special import logsumexp
 from scipy.stats import t
 from collections import defaultdict
@@ -37,7 +38,7 @@ class RationalModel:
     def initialize_from_existing(self, stimuli, partition):
         if len(stimuli) != len(partition):
             raise ValueError("Stimuli and partition must be same length")
-        self.stimuli = stimuli
+        self.stimuli = copy.deepcopy(stimuli)
         self.N = len(stimuli)
         unique_labels = sorted(set(partition), key=str)
         self.label_to_cluster = defaultdict(lambda:None, {label: i for i, label in enumerate(unique_labels)})

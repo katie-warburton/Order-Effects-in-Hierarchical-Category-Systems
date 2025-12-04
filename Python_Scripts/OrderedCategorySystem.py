@@ -208,45 +208,41 @@ def get_distance_mat(items, min_it=None, max_it=None, noise=0):
         np.fill_diagonal(D, 0)
     return D, item_hash
 
-def compute_possible_scores(trials, order_dic, item_space):
-    all_data = {t['P_ID']: [] for t in trials}
+def compute_possible_scores(trials, item_space):
     D, item_hash = get_distance_mat(item_space)
     lookUpTree = defaultdict(lambda: None)
-    for t in trials:
-        d, l, o = t['DEPTH'], t['LOC'], t['ORDER']
-        cat_assigns = t['ITEMS']
+    all_data = {tr['P_ID']: [] for tr in trials}
+    for tr in trials:
+        d = tr['DEPTH']
+        cat_assigns = tr['ITEMS']
         if d == 2:
             syst = CategorySystem(item_hash, '..\\Katie2025_AlienTaxonomist\\static_98863bd139ec98cf6bc52549beaaf679\\taxonomies\\tree2D.json')
         else:
             syst = CategorySystem(item_hash, '..\\Katie2025_AlienTaxonomist\\static_98863bd139ec98cf6bc52549beaaf679\\taxonomies\\tree3D.json')
-        orders = order_dic[f'{l}{o}']
         trial_data = []
-        i = 0
-        for i_ord in orders:
-            start_syst = copy.deepcopy(syst)
-            order_data = []
-            for item in i_ord:
-                syst_scores = []
-                cats = []
-                potential_systs = []
-                current_syst = start_syst
-                for i in range(len(current_syst.can_add)):
-                    test_syst = copy.deepcopy(current_syst)
-                    cat = test_syst.can_add[i]
-                    cat.add_item(item, current_syst.item_hash[item])
-                    test_syst.num_items += 1
-                    if not cat.visible:
-                        cat.visible = True
-                        test_syst.num_nodes += 1
-                    score = ordered_CKMM(test_syst.root, D, lookUpTree)
-                    syst_scores.append(score)
-                    cats.append(cat.label)
-                    potential_systs.append(test_syst)
-                cat_choice = cat_assigns[f'I{item:02}']
-                choice_idx = cats.index(cat_choice)
-                order_data.append((np.array(syst_scores), choice_idx))
-                start_syst = potential_systs[choice_idx]  
-            trial_data.append((order_data, i))
-            i += 1
-        all_data[t['P_ID']].append(trial_data)
+        # print(tr['SEQUENCE'])
+        for t in range(len(cat_assigns)):
+            syst_scores = []
+            cats = []
+            potential_systs = []
+            current_syst = syst
+            item = tr['SEQUENCE'][f't{t+1:02}']
+            # print(f't{t:02}', item)
+            for i in range(len(current_syst.can_add)):
+                test_syst = copy.deepcopy(current_syst)
+                cat = test_syst.can_add[i]
+                cat.add_item(item, current_syst.item_hash[item])
+                test_syst.num_items += 1
+                if not cat.visible:
+                    cat.visible = True
+                    test_syst.num_nodes += 1
+                score = ordered_CKMM(test_syst.root, D, lookUpTree)
+                syst_scores.append(score)
+                cats.append(cat.label)
+                potential_systs.append(test_syst)
+            cat_choice = cat_assigns[f'I{item:02}']
+            choice_idx = cats.index(cat_choice)
+            syst = potential_systs[choice_idx]  
+            trial_data.append((syst_scores, choice_idx))
+        all_data[tr['P_ID']].append(trial_data)
     return all_data, D, lookUpTree

@@ -129,17 +129,17 @@ def extract_dfs(exp_data):
         participant_data.append(participant_row)
     # make and save participant data frame
     participant_data = pd.DataFrame.from_dict(participant_data)
-    participant_data.to_csv('Results/participant_data_test.csv', index=None)
+    participant_data.to_csv('Results/participant_data_v2.csv', index=None)
     # make an save trial data in a data frame
     trial_data = pd.DataFrame.from_dict(trial_data)
     trial_data = trial_data[['P_ID', 'DEPTH', 'LOC', 'ORDER'] + [f'{i}' for i in range(9, 24)] + DISTRACTORS + ['ERRORS', 'STIMULI', 'POOL', 'SCORE']]
     trial_data.rename(columns={f'{i}':f'I{i:02}' for i in range(9, 24)}, inplace=True)
     trial_data.rename(columns={'1': 'I01', '3.01': 'I03', '29.01': 'I29', '31': 'I31'}, inplace=True)
-    trial_data.to_csv('Results/trial_data_test.csv', index=None)
+    trial_data.to_csv('Results/trial_data_v2.csv', index=None)
     #make and save sequence data frame
     sequence_data = pd.DataFrame.from_dict(sequence_data)
     sequence_data = sequence_data[['P_ID', 'DEPTH', 'LOC', 'ORDER'] + [f't{i:02}' for i in range(1, 14)] + ['STIMULI']]
-    sequence_data.to_csv('Results/sequence_data_test.csv', index=None)
+    sequence_data.to_csv('Results/sequence_data_v2.csv', index=None)
 
 def remove_duplicates(data):
     seen = set()
@@ -166,8 +166,10 @@ def main(filepath, specific_ids=[]):
     with open(filepath, 'r') as f:
         data = json.load(f)
     # specific uid is used if errors in normal way of storing data 
-    test = data[-1:]
-    test = get_experimental_trials(test, 't')
-    extract_dfs(test)   
+    prolific = [d for d in data if ('prolific_id' in d.keys() and d['study_id'] == '692d097af153eb01f86589b3') 
+                or (d['uid'] in specific_ids)]
+    prolific= get_experimental_trials(prolific, 'p')
 
-main('Results/results-98863bd139ec98cf6bc52549beaaf679-2025-12-01-04-10-08.json')
+    extract_dfs(prolific)   
+
+main('Results/results-98863bd139ec98cf6bc52549beaaf679-2025-12-04-00-39-56.json')

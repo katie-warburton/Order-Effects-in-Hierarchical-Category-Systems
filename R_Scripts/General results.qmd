@@ -10,7 +10,6 @@ editor: visual
 ```{r message=FALSE, warning=FALSE, results='hide'}
 library(dplyr) 
 library(tidyverse)
-library(mclogit)
 library("rcompanion")
 
 set.seed(13)
@@ -27,6 +26,10 @@ df_long <- df %>% pivot_longer(cols=all_of(items),
                                values_to = 'CAT') %>% 
   drop_na() %>% 
   select(all_of(c('P_ID', 'DEPTH', 'LOC', 'ORDER', 'CAT', 'STIMULI', 'POOL')))
+```
+
+```{r}
+round(table(df_long$CAT) / sum(table(df_long$CAT)), 3)
 ```
 
 Does category assignment differ by participant pool?

@@ -16,10 +16,10 @@ library(tidyverse)
 library(dplyr) 
 library(ggplot2) 
 library(lmtest) 
-library(brms) 
-library(tidybayes) 
 library(parameters) 
 library(mclogit) 
+library("rcompanion")
+
 
 set.seed(13)
 ```
@@ -72,19 +72,19 @@ l_anova
 ```
 
 ```{r}
-coef <- round(coef(lm_1), 2)
+coefs <- round(coef(lm_1), 2)
 ci <- round(confint(lm_1), 2)
 
-sprintf('%s & [%s, %s]', coef[["A~(Intercept)"]], ci[1,1], ci[1, 2])
+sprintf('%s & [%s, %s]', coefs[["L~(Intercept)"]], ci[1,1], ci[1, 2])
 
-sprintf('%s & [%s, %s]', coef[["A~ORDERf"]], ci[5,1], ci[5, 2])
-sprintf('%s & [%s, %s]', coef[["A~ORDERb"]], ci[3,1], ci[3, 2])
+sprintf('%s & [%s, %s]', coefs[["L~ORDERf"]], ci[5,1], ci[5, 2])
+sprintf('%s & [%s, %s]', coefs[["L~ORDERb"]], ci[3,1], ci[3, 2])
 
 
-sprintf('%s & [%s, %s]', coef[["B~(Intercept)"]], ci[2,1], ci[2, 2])
+sprintf('%s & [%s, %s]', coefs[["R~(Intercept)"]], ci[2,1], ci[2, 2])
 
-sprintf('%s & [%s, %s]', coef[["B~ORDERf"]], ci[6,1], ci[6, 2])
-sprintf('%s & [%s, %s]', coef[["B~ORDERb"]], ci[4,1], ci[4, 2])
+sprintf('%s & [%s, %s]', coefs[["R~ORDERf"]], ci[6,1], ci[6, 2])
+sprintf('%s & [%s, %s]', coefs[["R~ORDERb"]], ci[4,1], ci[4, 2])
 ```
 
 ### Centered
@@ -112,16 +112,16 @@ c_anova
 coef <- round(coef(cm_1), 2)
 ci <- round(confint(cm_1), 2)
 
-sprintf('%s & [%s, %s]', coef[["A~(Intercept)"]], ci[1,1], ci[1, 2])
+sprintf('%s & [%s, %s]', coef[["L~(Intercept)"]], ci[1,1], ci[1, 2])
 
-sprintf('%s & [%s, %s]', coef[["A~ORDERf"]], ci[5,1], ci[5, 2])
-sprintf('%s & [%s, %s]', coef[["A~ORDERb"]], ci[3,1], ci[3, 2])
+sprintf('%s & [%s, %s]', coef[["L~ORDERf"]], ci[5,1], ci[5, 2])
+sprintf('%s & [%s, %s]', coef[["L~ORDERb"]], ci[3,1], ci[3, 2])
 
 
-sprintf('%s & [%s, %s]', coef[["B~(Intercept)"]], ci[2,1], ci[2, 2])
+sprintf('%s & [%s, %s]', coef[["R~(Intercept)"]], ci[2,1], ci[2, 2])
 
-sprintf('%s & [%s, %s]', coef[["B~ORDERf"]], ci[6,1], ci[6, 2])
-sprintf('%s & [%s, %s]', coef[["B~ORDERb"]], ci[4,1], ci[4, 2])
+sprintf('%s & [%s, %s]', coef[["R~ORDERf"]], ci[6,1], ci[6, 2])
+sprintf('%s & [%s, %s]', coef[["R~ORDERb"]], ci[4,1], ci[4, 2])
 ```
 
 ### Right
@@ -147,18 +147,18 @@ r_anova
 
 ```{r}
 coef <- round(coef(rm_1), 2)
-ci <- round(confint(m_1), 2)
+ci <- round(confint(rm_1), 2)
 
-sprintf('%s & [%s, %s]', coef[["A~(Intercept)"]], ci[1,1], ci[1, 2])
+sprintf('%s & [%s, %s]', coef[["L~(Intercept)"]], ci[1,1], ci[1, 2])
 
-sprintf('%s & [%s, %s]', coef[["A~ORDERf"]], ci[5,1], ci[5, 2])
-sprintf('%s & [%s, %s]', coef[["A~ORDERb"]], ci[3,1], ci[3, 2])
+sprintf('%s & [%s, %s]', coef[["L~ORDERf"]], ci[5,1], ci[5, 2])
+sprintf('%s & [%s, %s]', coef[["L~ORDERb"]], ci[3,1], ci[3, 2])
 
 
-sprintf('%s & [%s, %s]', coef[["B~(Intercept)"]], ci[2,1], ci[2, 2])
+sprintf('%s & [%s, %s]', coef[["R~(Intercept)"]], ci[2,1], ci[2, 2])
 
-sprintf('%s & [%s, %s]', coef[["B~ORDERf"]], ci[6,1], ci[6, 2])
-sprintf('%s & [%s, %s]', coef[["B~ORDERb"]], ci[4,1], ci[4, 2])
+sprintf('%s & [%s, %s]', coef[["R~ORDERf"]], ci[6,1], ci[6, 2])
+sprintf('%s & [%s, %s]', coef[["R~ORDERb"]], ci[4,1], ci[4, 2])
 ```
 
 ### Overall
@@ -184,15 +184,73 @@ o_anova
 coef <- round(coef(m_1), 2)
 ci <- round(confint(m_1), 2)
 
-print('A vs. X')
-sprintf('Intercept: %s & [%s, %s]', coef[["A~(Intercept)"]], ci[1,1], ci[1, 2])
-sprintf('Forward: %s & [%s, %s]', coef[["A~ORDERf"]], ci[5,1], ci[5, 2])
-sprintf('Backward: %s & [%s, %s]', coef[["A~ORDERb"]], ci[3,1], ci[3, 2])
+print('L vs. X')
+sprintf('Intercept: %s & [%s, %s]', coef[["L~(Intercept)"]], ci[1,1], ci[1, 2])
+sprintf('Forward: %s & [%s, %s]', coef[["L~ORDERf"]], ci[5,1], ci[5, 2])
+sprintf('Backward: %s & [%s, %s]', coef[["L~ORDERb"]], ci[3,1], ci[3, 2])
 
 
-print('B vs. X')
-sprintf('Intercept: %s & [%s, %s]', coef[["B~(Intercept)"]], ci[2,1], ci[2, 2])
+print('R vs. X')
+sprintf('Intercept: %s & [%s, %s]', coef[["R~(Intercept)"]], ci[2,1], ci[2, 2])
 
-sprintf('Forward: %s & [%s, %s]', coef[["B~ORDERf"]], ci[6,1], ci[6, 2])
-sprintf('Backward: %s & [%s, %s]', coef[["B~ORDERb"]], ci[4,1], ci[4, 2])
+sprintf('Forward: %s & [%s, %s]', coef[["R~ORDERf"]], ci[6,1], ci[6, 2])
+sprintf('Backward: %s & [%s, %s]', coef[["R~ORDERb"]], ci[4,1], ci[4, 2])
+```
+
+Using chi-squared for order
+
+```{r}
+left_cat_by_order <- table(df_L$ORDER, df_L$CAT)
+
+left_cat_by_order
+
+round(t(apply(left_cat_by_order,1, function(x) x/sum(x))), 3)
+
+t_pool <- chisq.test(left_cat_by_order)
+t_pool 
+round(cramerV(left_cat_by_order), 2)
+
+chisq.test(left_cat_by_order)$stdre
+```
+
+```{r}
+center_cat_by_order <- table(df_C$ORDER, df_C$CAT)
+
+center_cat_by_order
+
+round(t(apply(center_cat_by_order,1, function(x) x/sum(x))), 3)
+
+t_pool <- chisq.test(center_cat_by_order)
+t_pool 
+round(cramerV(center_cat_by_order), 2)
+
+chisq.test(center_cat_by_order)$stdre
+```
+
+```{r}
+right_cat_by_order <- table(df_R$ORDER, df_R$CAT)
+
+right_cat_by_order
+
+round(t(apply(right_cat_by_order,1, function(x) x/sum(x))), 3)
+
+t_pool <- chisq.test(right_cat_by_order)
+t_pool 
+round(cramerV(right_cat_by_order), 2)
+
+chisq.test(right_cat_by_order)$stdre
+```
+
+```{r}
+cat_by_order <- table(long_1a$ORDER, long_1a$CAT)
+
+cat_by_order
+
+round(t(apply(cat_by_order,1, function(x) x/sum(x))), 3)
+
+t_pool <- chisq.test(cat_by_order)
+t_pool 
+round(cramerV(cat_by_order), 2)
+
+chisq.test(cat_by_order)$stdre
 ```

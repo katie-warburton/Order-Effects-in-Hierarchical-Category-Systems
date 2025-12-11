@@ -19,7 +19,7 @@ library(ggplot2)
 library(lmtest) 
 library(brms) 
 library(tidybayes) 
-library(parameters) 
+# library(parameters) 
 
 set.seed(13)
 ```
@@ -47,17 +47,19 @@ Items in the centered location are more likely to be assigned to category:
 
 ```{r}
 df_1bi <- df_C[df_C$ORDER != 'm',]
-df_1bi$IS_A <- as.integer(df_1bi$CAT == 'A')
+df_1bi$IS_A <- as.integer(df_1bi$CAT == 'L')
 ```
 
 ```{r}
 mbi_1 <- glmer(IS_A ~ 1 + ORDER + (1|STIMULI) + (1|P_ID),
               family = binomial,
-              data = df_1bi)
+              data = df_1bi,
+              control = glmerControl(optimizer = "bobyqa"))
 
 mbi_0 <- glmer(IS_A ~ 1 + (1|STIMULI) + (1|P_ID),
                    data = df_1bi,
-                   family = binomial)
+                   family = binomial,
+               control = glmerControl(optimizer = "bobyqa"))
 lrtest(mbi_0, mbi_1)
 round(fixef(mbi_1), 2)
 round(confint(mbi_1, parm='beta_', method='Wald'), 2)
@@ -67,17 +69,21 @@ round(confint(mbi_1, parm='beta_', method='Wald'), 2)
 
 ```{r}
 df_bii <- df_C[df_C$ORDER != 'm',]
-df_bii$IS_B <- as.integer(df_bii$CAT == 'B')
+df_bii$IS_B <- as.integer(df_bii$CAT == 'R')
 df_bii$ORDER <- relevel(factor(df_bii$ORDER), ref = 'f')
 
 
 mbii_1 <- glmer(IS_B ~ 1 + ORDER + (1|STIMULI) + (1|P_ID),
               family = binomial,
-              data = df_bii)
+              data = df_bii,
+              control = glmerControl(optimizer = "bobyqa")
+      )
 
 mbii_0 <- glmer(IS_B ~ 1 + (1|STIMULI) + (1|P_ID),
-                   data = df_bii,
-                   family = binomial)
+                  data = df_bii,
+                  family = binomial,
+                  control = glmerControl(optimizer = "bobyqa")
+                )
 
 lrtest(mbii_0, mbii_1)
 round(fixef(mbii_1), 2)
@@ -95,12 +101,14 @@ df_biii$ORDER <- relevel(factor(df_biii$ORDER), ref = 'not_m')
 
 mbiii_1 <- glmer( IS_X ~ 1 + ORDER  + (1|STIMULI) + (1|P_ID),
               family = binomial,
-              data = df_biii)
+              data = df_biii,
+              control = glmerControl(optimizer = "bobyqa"))
 
 
 mbiii_0 <- glmer(IS_X ~ 1 + (1|STIMULI) + (1|P_ID),
                    data = df_biii,
-                   family = binomial)
+                   family = binomial,
+                   control = glmerControl(optimizer = "bobyqa"))
 
 lrtest(mbiii_0, mbiii_1)
 round(fixef(mbiii_1), 2)
@@ -114,15 +122,18 @@ Items in the left-shifted location are more likely to be assigned to category A 
 ```{r}
 df_L <- df[df$LOC == 'L',]
 df_1c <- df_L[df_L$ORDER != 'm',]
-df_1c$IS_A <- as.integer(df_1c$CAT == 'A')
+df_1c$IS_A <- as.integer(df_1c$CAT == 'L')
 
 m1c_1 <- glmer(IS_A ~ 1 + ORDER + (1|STIMULI) + (1|P_ID) ,
               family = binomial,
-              data = df_1c)
+              data = df_1c,
+              control = glmerControl(optimizer = "bobyqa"))
 
 m1c_0 <- glmer(IS_A ~ 1 + (1|STIMULI) + (1|P_ID),
                    data = df_1c,
-                   family = binomial)
+                   family = binomial,
+                   control = glmerControl(optimizer = "bobyqa")
+               )
 
 lrtest(m1c_0, m1c_1)
 fixef(m1c_1)
@@ -136,16 +147,19 @@ Items in the right-shifted location are more likely to be assigned to category B
 ```{r}
 df_R <- df[df$LOC == 'R',]
 df_1d <- df_R[df_R$ORDER != 'm',]
-df_1d$IS_B <- as.integer(df_1d$CAT == 'B')
+df_1d$IS_B <- as.integer(df_1d$CAT == 'R')
 df_1d$ORDER <- relevel(factor(df_1d$ORDER), ref='f')
 
 m1d_1 <- glmer(IS_B ~ 1 + ORDER + (1|STIMULI) + (1|P_ID),
               family = binomial,
-              data = df_1d)
+              data = df_1d,
+              control = glmerControl(optimizer = "bobyqa"))
 
 m1d_0 <- glmer(IS_B ~ 1 + (1|STIMULI) + (1|P_ID),
                    data = df_1d,
-                   family = binomial)
+                   family = binomial,
+                   control = glmerControl(optimizer = "bobyqa") 
+               )
 
 lrtest(m1d_0, m1d_1)
 fixef(m1d_1)

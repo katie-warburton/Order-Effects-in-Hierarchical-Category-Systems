@@ -14,9 +14,6 @@ library(dplyr)
 library(lme4) 
 library(ggplot2) 
 library(lmtest) 
-library(brms) 
-library(tidybayes) 
-library(parameters) 
 
 set.seed(13)
 ```
@@ -60,44 +57,4 @@ intercept <- coef(summary(m1))[1]
 prob <- exp(intercept) / (1 + exp(intercept))
 
 print(prob)
-```
-
-### Exploratory:
-
-Do any factors predict likelihood of being the same?
-
-```{r}
-m2 <- glmer(SAME ~ 1  + DEPTH + 
-              (1|P_ID) + (1|STIMULI),
-            family = binomial,
-            data = df)
-lrtest(m1, m2)
-
-
-m3 <- glmer(SAME ~ 1 + FIRST + 
-              (1|P_ID) + (1|STIMULI),
-            family = binomial,
-            data = df)
-lrtest(m1, m3)
-
-m4 <- glmer(SAME ~ 1 + LOC + 
-              (1|P_ID) + (1|STIMULI),
-            family = binomial,
-            data = df)
-
-lrtest(m1, m4)
-
-
-m5 <- glmer(SAME ~ 1 + ORDER + 
-              (1|P_ID) + (1|STIMULI),
-            family = binomial,
-            data = df)
-
-lrtest(m1, m5)
-```
-
-Neither depth nor the category of the first item significantly improve the ability of the model to predict same or not same.
-
-```{r}
-summary(m5)
 ```

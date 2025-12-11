@@ -14,9 +14,6 @@ library(dplyr)
 library(lme4) 
 library(ggplot2) 
 library(lmtest) 
-library(brms) 
-library(tidybayes) 
-library(parameters) 
 
 set.seed(13)
 ```

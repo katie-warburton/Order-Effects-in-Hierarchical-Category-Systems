@@ -1,6 +1,20 @@
 import pandas as pd
+import numpy as np
 from scipy import stats
 from matplotlib import pyplot as plt
+
+def bootstrap_LXR_confidence_intervals(df, p):
+    np.random.seed(13)
+    avg_prop = np.empty((p, 3))
+    N = df.shape[0]
+    lb, ub = int(0.025*p)-1, int(0.975*p)-1
+    df = df[['PROP_L', 'PROP_X', 'PROP_R']]
+    for i in range(p):
+        sample_df = df.sample(N, replace=True)
+        avg_prop[i,:] = sample_df.mean(axis=0).to_list()
+    l_vec, x_vec, r_vec = avg_prop[:,0], avg_prop[:,1], avg_prop[:,2]
+    l_vec.sort(), x_vec.sort(), r_vec.sort()
+    return np.array([l_vec[lb], x_vec[lb], r_vec[lb]]), np.array([l_vec[ub], x_vec[ub], r_vec[ub]])
 
 def order_effects_plot(df, fname='Figures/LXR_by_order_loc', figsize=(3.2, 4), legend=False):
     grouped_df = df.groupby(['LOC', 'ORDER']).mean(numeric_only=True).reset_index()
@@ -24,14 +38,18 @@ def order_effects_plot(df, fname='Figures/LXR_by_order_loc', figsize=(3.2, 4), l
             order = orders[j].lower()[0]
             loc = locations[i][0]
             y = grouped_df[(grouped_df['LOC'] == loc) & (grouped_df['ORDER'] == order)][['PROP_L', 'PROP_X', 'PROP_R']].values[0]
-            y_err = sem[(sem['LOC'] == loc) & (sem['ORDER'] == order)][['PROP_L', 'PROP_X', 'PROP_R']].values[0]
-            ax.bar(x, y, color=['#D81B60', '#1E88E5', '#FFC107'], edgecolor='black', width=0.75, linewidth=0.5)
+
+            if i < 3:
+                ci_lb, ci_ub  = bootstrap_LXR_confidence_intervals(df[(df['LOC'] == loc) & (df['ORDER'] == order)], 5000)
+            else:
+                ci_lb, ci_ub = bootstrap_LXR_confidence_intervals(df[df['ORDER'] == order], 5000)
+            ci_lb = y - ci_lb
+            ci_ub = ci_ub - y
+            y_err = np.vstack([ci_lb, ci_ub])
+            ax.bar(x, y, color=['#D81B60', '#1E88E5', '#FFC107'], edgecolor='black', width=0.75, linewidth=0.75, yerr=y_err, capsize=2, error_kw=dict(elinewidth=0.75, capthick=0.75))
             if i == 0:
                 ax.set_title(f'{orders[j]}', fontsize=9.5)
                 ax.set_xticks([])
-            # elif i == 3:
-            #     ax.set_xticks(['A', 'X', 'B'])
-            # else:
             ax.set_xticks([])
             if j == 0:
                 ax.set_ylabel(f'{locations[i]}', fontsize=10)
@@ -46,9 +64,9 @@ def order_effects_plot(df, fname='Figures/LXR_by_order_loc', figsize=(3.2, 4), l
                 ax.text(-0.42, 0.86, f"T = {total_trials[total_trials['ORDER'] == order]['P_ID'].iloc[0]}", size=8)
         if legend:
             handles = [
-                plt.Rectangle((0,0),0.5,0.5, facecolor='#D81B60', edgecolor='black', linewidth=0.5),
-                plt.Rectangle((0,0),0.5,0.5, facecolor='#1E88E5', edgecolor='black', linewidth=0.5),
-                plt.Rectangle((0,0),0.5,0.5, facecolor='#FFC107', edgecolor='black', linewidth=0.5),
+                plt.Rectangle((0,0),0.5,0.5, facecolor='#D81B60', edgecolor='black', linewidth=0.75),
+                plt.Rectangle((0,0),0.5,0.5, facecolor='#1E88E5', edgecolor='black', linewidth=0.75),
+                plt.Rectangle((0,0),0.5,0.5, facecolor='#FFC107', edgecolor='black', linewidth=0.75),
             ]
             labels = ['L', 'X', 'R']
             fig.legend(
@@ -60,14 +78,10 @@ def order_effects_plot(df, fname='Figures/LXR_by_order_loc', figsize=(3.2, 4), l
                 frameon=False,
                 fontsize=9
             )
-
-
-    fig.savefig(f'{fname}.jpg', dpi=400, bbox_inches='tight')
+    fig.savefig(f'{fname}.jpg', dpi=600, bbox_inches='tight')
     
 def new_category_plot(df, fname='Figures/X_by_depth', figsize=(3,3)):
     df_hyp3 = df[['DEPTH', 'HAS_X']].groupby(['DEPTH']).mean().reset_index()
-    # sem = df[['DEPTH', 'HAS_X']].groupby(['DEPTH']).sem().reset_index()    
-    # df_hyp3['SEM'] = sem['HAS_X']
     fig, ax = plt.subplots(1, 1, figsize=figsize)
     ax.bar(x='DEPTH', height='HAS_X' , data=df_hyp3, color=['#785ef0', '#fe6100'], edgecolor="black", capsize=6)
     ax.set_ylim(0, 1)
@@ -79,17 +93,12 @@ def new_category_plot(df, fname='Figures/X_by_depth', figsize=(3,3)):
     ax.spines[['right', 'top']].set_visible(False)
     fig.savefig(f'{fname}.jpg', dpi=300, bbox_inches='tight') 
 
-    #  green = #004D40
-
 def generate_summary_LXR_plot(df, column, colVals, names, figsize=(6.25, 2.15), overall=False, fname='Figures/summary'):
     stim_df = df.groupby([column]).mean(numeric_only=True).reset_index()[[column, 'PROP_L', 'PROP_R', 'PROP_X']]   
     counts = df.groupby([column]).count().reset_index()[[column, 'PROP_L', 'PROP_R', 'PROP_X']]   
-    sem = df.groupby([column]).sem(numeric_only=True).reset_index()[[column, 'PROP_L', 'PROP_R', 'PROP_X']]  
-    # condifence intervals instead??
     numAx = len(colVals)
     if overall:
         avg = df[['PROP_L', 'PROP_X', 'PROP_R']].mean(numeric_only=True).values
-        overall_err = df[['PROP_L', 'PROP_X', 'PROP_R']].sem(numeric_only=True).values
         numAx += 1
     fig, axes = plt.subplots(1, numAx, figsize=figsize, constrained_layout=True)
     for i in range(numAx):
@@ -97,23 +106,25 @@ def generate_summary_LXR_plot(df, column, colVals, names, figsize=(6.25, 2.15), 
             x = ['L', 'X', 'R']
             if overall and i == 0:
                 y = avg
-                yerr = overall_err
                 ax.text(-0.42, 0.89, f'T = {df.shape[0]}', size=8)
                 ax.set_title('Overall', fontsize=9.5)
+                ci_lb, ci_ub  = bootstrap_LXR_confidence_intervals(df, 5000)
             elif overall:
                 val = colVals[i-1]
                 y = stim_df[stim_df[column] == val][['PROP_L', 'PROP_X', 'PROP_R']].values[0]
-                yerr = sem[sem[column] == val][['PROP_L', 'PROP_X', 'PROP_R']].values[0]
                 ax.text(-0.42, 0.89, f"T = {counts[counts[column] == val]['PROP_L'].iloc[0]}", size=8)
                 ax.set_title(f'{names[i-1]}', fontsize=9.5)
+                ci_lb, ci_ub  = bootstrap_LXR_confidence_intervals(df[df[column] == val], 5000)
             else:
                 val = colVals[i]
                 y = stim_df[stim_df[column] == val][['PROP_L', 'PROP_X', 'PROP_R']].values[0]
-                yerr = sem[sem[column] == val][['PROP_L', 'PROP_X', 'PROP_R']].values[0]
                 ax.text(-0.42, 0.89, f"T = {counts[counts[column] == val]['PROP_L'].iloc[0]}", size=8)
                 ax.set_title(f'{names[i]}', fontsize=9.5)
-            ax.bar(x, y, color=['#D81B60', '#1E88E5', '#FFC107'], edgecolor='black', width=0.75, linewidth=0.5)#, yerr=yerr, capsize=3)
-            # ax.set_xticks(['A', 'X', 'B'])
+                ci_lb, ci_ub  = bootstrap_LXR_confidence_intervals(df[df[column] == val], 5000)
+            ci_lb = y - ci_lb
+            ci_ub = ci_ub - y
+            y_err = np.vstack([ci_lb, ci_ub])
+            ax.bar(x, y, color=['#D81B60', '#1E88E5', '#FFC107'], edgecolor='black', width=0.75, linewidth=0.75, yerr=y_err, capsize=2,  error_kw=dict(elinewidth=0.75, capthick=0.75))
             ax.set_xticks([])
             ax.tick_params(axis='both', which='major', labelsize=8)
             if i == 0:
@@ -124,22 +135,22 @@ def generate_summary_LXR_plot(df, column, colVals, names, figsize=(6.25, 2.15), 
             ax.set_ylim(0, 1)
 
             handles = [
-                plt.Rectangle((0,0),0.5,0.5, facecolor='#D81B60', edgecolor='black', linewidth=0.5),
-                plt.Rectangle((0,0),0.5,0.5, facecolor='#1E88E5', edgecolor='black', linewidth=0.5),
-                plt.Rectangle((0,0),0.5,0.5, facecolor='#FFC107', edgecolor='black', linewidth=0.5),
+                plt.Rectangle((0,0),0.5,0.5, facecolor='#D81B60', edgecolor='black', linewidth=0.75),
+                plt.Rectangle((0,0),0.5,0.5, facecolor='#1E88E5', edgecolor='black', linewidth=0.75),
+                plt.Rectangle((0,0),0.5,0.5, facecolor='#FFC107', edgecolor='black', linewidth=0.75),
             ]
             labels = ['L', 'X', 'R']
             fig.legend(
                 handles,
                 labels,
-                loc='lower right',
+                loc='lower left',
                 bbox_transform=fig.transFigure,
-                bbox_to_anchor=(1.02, -0.15),
+                bbox_to_anchor=(-0.02, -0.15),
                 ncol=3,
                 frameon=False,
                 fontsize=8
             )
-    fig.savefig(f'{fname}.jpg', dpi=300, bbox_inches='tight')
+    fig.savefig(f'{fname}.jpg', dpi=600, bbox_inches='tight')
 
 
 def same_as_dist(seq_df, fname='Figures/same_as_dist', figsize=(4, 2.5)):

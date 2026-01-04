@@ -93,7 +93,7 @@ def new_category_plot(df, fname='Figures/X_by_depth', figsize=(3,3)):
     ax.spines[['right', 'top']].set_visible(False)
     fig.savefig(f'{fname}.jpg', dpi=300, bbox_inches='tight') 
 
-def generate_summary_LXR_plot(df, column, colVals, names, figsize=(6.25, 2.15), overall=False, fname='Figures/summary'):
+def generate_summary_LXR_plot(df, column, colVals, names, figsize=(6.25, 2.15), overall=False, fname='Figures/summary', legend=True, ylabel='Mean % of items'):
     stim_df = df.groupby([column]).mean(numeric_only=True).reset_index()[[column, 'PROP_L', 'PROP_R', 'PROP_X']]   
     counts = df.groupby([column]).count().reset_index()[[column, 'PROP_L', 'PROP_R', 'PROP_X']]   
     numAx = len(colVals)
@@ -129,27 +129,28 @@ def generate_summary_LXR_plot(df, column, colVals, names, figsize=(6.25, 2.15), 
             ax.tick_params(axis='both', which='major', labelsize=8)
             if i == 0:
                 ax.set_yticks([0.0, 0.5, 1.0])
-                ax.set_ylabel('Mean % of items', fontsize=9)
+                ax.set_ylabel(ylabel, fontsize=9)
             else:
                 ax.set_yticks([])
             ax.set_ylim(0, 1)
 
-            handles = [
-                plt.Rectangle((0,0),0.5,0.5, facecolor='#D81B60', edgecolor='black', linewidth=0.75),
-                plt.Rectangle((0,0),0.5,0.5, facecolor='#1E88E5', edgecolor='black', linewidth=0.75),
-                plt.Rectangle((0,0),0.5,0.5, facecolor='#FFC107', edgecolor='black', linewidth=0.75),
-            ]
-            labels = ['L', 'X', 'R']
-            fig.legend(
-                handles,
-                labels,
-                loc='lower left',
-                bbox_transform=fig.transFigure,
-                bbox_to_anchor=(-0.02, -0.15),
-                ncol=3,
-                frameon=False,
-                fontsize=8
-            )
+            if legend:
+                handles = [
+                    plt.Rectangle((0,0),0.5,0.5, facecolor='#D81B60', edgecolor='black', linewidth=0.75),
+                    plt.Rectangle((0,0),0.5,0.5, facecolor='#1E88E5', edgecolor='black', linewidth=0.75),
+                    plt.Rectangle((0,0),0.5,0.5, facecolor='#FFC107', edgecolor='black', linewidth=0.75),
+                ]
+                labels = ['L', 'X', 'R']
+                fig.legend(
+                    handles,
+                    labels,
+                    loc='lower left',
+                    bbox_transform=fig.transFigure,
+                    bbox_to_anchor=(-0.02, -0.15),
+                    ncol=3,
+                    frameon=False,
+                    fontsize=8
+                )
     fig.savefig(f'{fname}.jpg', dpi=600, bbox_inches='tight')
 
 

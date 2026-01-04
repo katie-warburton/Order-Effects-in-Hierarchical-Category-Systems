@@ -114,12 +114,12 @@ def extract_dfs(exp_data):
                 d, l, o = list(tr['condition'])
                 trial_row = tr['category_choices']
                 if pool == 'prolific2':
-                    # if o.lower() in ['f', 'b', 'm']:
-                    #     sequence_row = {f't{i+1:02}': it for i, it in enumerate(tr['item_order'])}
-                    #     print(sequence_row)
-                    # else:
-                    #     sequence_row = {} # should it be order things are added to the tree??
-                    sequence_row = {f't{i+1:02}': it for i, it in enumerate(tr['item_order'])} # still not sure the best way to handle sequence for all at once??
+                    if o.lower() in ['f', 'b', 'm']:
+                        sequence_row = {f't{i+1:02}': it for i, it in enumerate(tr['item_order'])}
+                    else:
+                        # currently order in which items are added to the tree -- could be the order in which their displayed too (would just be the same as the above row then)
+                        sequence_row = {f't{i+1:02}': int(float(list(pair.keys())[0])) for  i, pair in enumerate(tr['category_choices']) }
+                    # sequence_row = {f't{i+1:02}': it for i, it in enumerate(tr['item_order'])}
                     trial_row = {item: cat for pair in trial_row for item, cat in pair.items()}
                     sequence_row['P_ID'] = pid
                     sequence_row['DEPTH'] = d

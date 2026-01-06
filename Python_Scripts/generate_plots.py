@@ -16,7 +16,7 @@ def bootstrap_LXR_confidence_intervals(df, p):
     l_vec.sort(), x_vec.sort(), r_vec.sort()
     return np.array([l_vec[lb], x_vec[lb], r_vec[lb]]), np.array([l_vec[ub], x_vec[ub], r_vec[ub]])
 
-def order_effects_plot(df, fname='Figures/LXR_by_order_loc', figsize=(3.2, 4), legend=False):
+def order_effects_plot(df, fname='Figures/LXR_by_order_loc', figsize=(3.2, 4), legend=False, show_counts=True):
     grouped_df = df.groupby(['LOC', 'ORDER']).mean(numeric_only=True).reset_index()
     counts = df.groupby(['LOC', 'ORDER']).count().reset_index()
     sem = df.groupby(['LOC', 'ORDER']).sem(numeric_only=True).reset_index() 
@@ -57,11 +57,12 @@ def order_effects_plot(df, fname='Figures/LXR_by_order_loc', figsize=(3.2, 4), l
             else:
                 ax.set_yticks([])
             ax.set_ylim(0, 1)
-            if i != 3:
-                ax.text(-0.42, 0.86, f"T = {counts[(counts['LOC'] == loc) & (counts['ORDER'] == order)]['P_ID'].iloc[0]}", size=8)
-            else:
-                total_trials = counts.groupby('ORDER').sum().reset_index()
-                ax.text(-0.42, 0.86, f"T = {total_trials[total_trials['ORDER'] == order]['P_ID'].iloc[0]}", size=8)
+            if show_counts:
+                if i != 3:
+                    ax.text(-0.42, 0.86, f"T = {counts[(counts['LOC'] == loc) & (counts['ORDER'] == order)]['P_ID'].iloc[0]}", size=8)
+                else:
+                    total_trials = counts.groupby('ORDER').sum().reset_index()
+                    ax.text(-0.42, 0.86, f"T = {total_trials[total_trials['ORDER'] == order]['P_ID'].iloc[0]}", size=8)
         if legend:
             handles = [
                 plt.Rectangle((0,0),0.5,0.5, facecolor='#D81B60', edgecolor='black', linewidth=0.75),
